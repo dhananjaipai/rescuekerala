@@ -13,6 +13,8 @@ from django.contrib.messages.views import SuccessMessageMixin
 from django.contrib.auth import logout
 from django.shortcuts import redirect
 from django.db.models import Count
+import json 
+from django.core.serializers.json import DjangoJSONEncoder
 
 class CreateRequest(CreateView):
     model = Request
@@ -140,6 +142,13 @@ def request_details(request, request_id=None):
     except:
         return HttpResponseRedirect("/error?error_text={}".format('Sorry, we couldnt fetch details for that request'))
     return render(request, 'mainapp/request_details.html', {'filter' : filter, 'req': req_data })
+
+def request_map(request):
+    lat = str(int(float(request.GET['lat'])*100)/100)
+    lng = str(int(float(request.GET['lng'])*100)/100)
+    req_data = Request.objects.filter(latlng__startswith=lat).filter(latlng__contains=lng).values()
+    dictionaries = list(req_data)
+    return render(request,"mainapp/request_map.html", { "data" : json.dumps({"data": dictionaries},cls=DjangoJSONEncoder) })
 
 class DistrictManagerFilter(django_filters.FilterSet):
     class Meta:

@@ -10,6 +10,7 @@ urlpatterns = [
     path('volunteer/', views.RegisterVolunteer.as_view(), name='registerview'),
     path('requests/', views.request_list, name='requestlistview'),
     url(r'request_details/(?P<request_id>\d+)/$', views.request_details, name='requestdetailsview'),
+    path('requestMap/', views.request_map, name='requestmapview'),
     path('contactus/', views.districtmanager_list, name='contactus'),
     path('reg_success/', views.RegSuccess.as_view(), name='reg_successview'),
     path('req_sucess/', views.ReqSuccess.as_view(), name='req_sucessview'),

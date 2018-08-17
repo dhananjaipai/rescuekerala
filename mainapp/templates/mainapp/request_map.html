@@ -1,0 +1,124 @@
+ {% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Nearby Requests</title>
+    <style>
+        body {
+            margin: 0px;
+        }
+
+        #map {
+            height: 100vh;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+
+    <script>
+        function getQueryStringValue(key) {
+            return decodeURIComponent(window.location.search.replace(new RegExp("^(?:.*[&\\?]" + encodeURIComponent(key)
+                .replace(/[\.\+\*]/g, "\\$&") + "(?:\\=([^&]*))?)?.*$", "i"), "$1"));
+        }
+        var lat = getQueryStringValue("lat");
+        var lng = getQueryStringValue("lng");
+        if (!lat || !lng) {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(e => {
+                    window.location.href = window.location.origin + window.location.pathname + '?lat=' + e.coords
+                        .latitude + '&lng=' + e.coords.longitude;
+                })
+            } else {
+                document.querySelector('#map').innerHTML = "Geolocation is not supported by this browser.";
+            }
+        }
+    </script>
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js"></script>
+    <script src="{% static 'js/gmaps.js'%}"></script>
+    <script>
+        var requests = JSON.parse("{{data}}".replace(/&quot;/g, "\"")).data;
+        var map;
+        var markerImage = {
+            person: "{% static 'images/markers/person.png'%}",
+            food: "{% static 'images/markers/food.png'%}",
+            water: "{% static 'images/markers/water.png'%}",
+            dress: "{% static 'images/markers/dress.png'%}",
+            medicine: "{% static 'images/markers/medicine.png'%}",
+            help: "{% static 'images/markers/help.png'%}"
+        }
+
+        function getIcon(request) {
+            var icon = markerImage.help;
+            help = 0;
+            if (request.needcloth) {
+                help++;
+                icon = markerImage.dress;
+            }
+            if (request.needfood) {
+                help++;
+                icon = markerImage.food;
+            }
+            if (request.needmed) {
+                help++;
+                icon = markerImage.medicine;
+            }
+            if (request.needwater) {
+                help++;
+                icon = markerImage.water;
+            }
+            return help === 1 ? icon : markerImage.help;
+        }
+        $(document).ready(function () {
+            if (lat && lng) {
+                map = new GMaps({
+                    div: '#map',
+                    lat,
+                    lng
+                });
+                map.addMarker({
+                    lat: 9.997,
+                    lng: 76.361,
+                    title: 'You',
+                    icon: markerImage.person
+                });
+                requests.forEach(request => {
+                    map.addMarker({
+                        lat: request.latlng.split(',')[0],
+                        lng: request.latlng.split(',')[1],
+                        title: request.requestee,
+                        icon: getIcon(request),
+                        infoWindow: {
+                            content: `
+                                <div class="modal">
+                                    <p> Date : ${new Date(request.dateadded)}
+                                    </p>
+                                    <p> Contact Number :
+                                        <a href="tel:${request.requestee_phone}">${request.requestee_phone}</a>
+                                    </p>
+                                    <div> Summary of request : 
+                                        ${request.needcloth ? `<p> Cloth : ${request.detailcloth}</p>`: "" }
+                                        ${request.needfood ? `<p> Food : ${request.detailfood}</p>`: "" }
+                                        ${request.needkit_util ? `<p> Utilities : ${request.detailkit_util}</p>`: "" }
+                                        ${request.needmed ? `<p> Medicine : ${request.detailmed}</p>`: "" }
+                                        ${request.needrescue ? `<p> Rescue : ${request.detailrescue}</p>`: "" }
+                                        ${request.needtoilet ? `<p> Toilet : ${request.detailtoilet}</p>`: "" }
+                                        ${request.needwater ? `<p> Water : ${request.detailwater}</p>`: "" }
+                                        ${request.needothers ? `<p> Other Requests : ${request.needothers}</p>`: "" }
+                                    </div>
+                                </div>`
+                        }
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>
